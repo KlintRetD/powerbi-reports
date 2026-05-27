@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rapport Power BI – Assurance</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:      #0F2744;
+  --navy-mid:  #1A3A60;
+  --blue:      #1E6FBF;
+  --blue-lt:   #3B9AE1;
+  --accent:    #F4A623;
+  --teal:      #00B5A3;
+  --coral:     #E05252;
+  --purple:    #7C5CBF;
+  --bg:        #0A1929;
+  --surface:   #0F2744;
+  --surface2:  #162F52;
+  --border:    rgba(255,255,255,0.08);
+  --text:      #E8F0FE;
+  --text-dim:  #8BA7CC;
+  --text-muted:#4A6A99;
+  --grid:      rgba(59,154,225,0.08);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── HEADER ── */
+.header {
+  background: linear-gradient(135deg, var(--navy) 0%, #0D2240 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+}
+
+.header-left { display: flex; align-items: center; gap: 16px; }
+.logo {
+  width: 36px; height: 36px;
+  background: linear-gradient(135deg, var(--blue), var(--teal));
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+.header-title { font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+.header-sub { font-size: 11px; color: var(--text-dim); font-weight: 400; }
+.header-meta {
+  font-size: 11px; color: var(--text-muted);
+  font-family: 'DM Mono', monospace;
+  background: rgba(255,255,255,0.04);
+  padding: 6px 12px; border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+/* ── TABS ── */
+.tabs-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  padding: 0 32px;
+  gap: 4px;
+  overflow-x: auto;
+}
+.tab {
+  padding: 14px 20px;
+  font-size: 12px; font-weight: 500;
+  color: var(--text-dim);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all 0.2s;
+  display: flex; align-items: center; gap: 8px;
+}
+.tab:hover { color: var(--text); }
+.tab.active {
+  color: var(--blue-lt);
+  border-bottom-color: var(--blue-lt);
+}
+.tab-icon { font-size: 14px; }
+
+/* ── FILTERS ── */
+.filter-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 32px;
+  display: flex; align-items: center; gap: 12px;
+  flex-wrap: wrap;
+}
+.filter-label { font-size: 11px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.filter-chip {
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 11px; font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  transition: all 0.15s;
+}
+.filter-chip:hover { border-color: var(--blue-lt); color: var(--blue-lt); }
+.filter-chip.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+.filter-sep { width: 1px; height: 20px; background: var(--border); }
+
+/* ── MAIN ── */
+.main { padding: 24px 32px; }
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── KPI CARDS ── */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s, border-color 0.2s;
+}
+.kpi-card:hover { transform: translateY(-2px); border-color: rgba(59,154,225,0.3); }
+.kpi-card::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  border-radius: 12px 12px 0 0;
+}
+.kpi-card.blue::before { background: linear-gradient(90deg, var(--blue), var(--blue-lt)); }
+.kpi-card.teal::before { background: linear-gradient(90deg, var(--teal), #00D4BF); }
+.kpi-card.coral::before { background: linear-gradient(90deg, var(--coral), #F07070); }
+.kpi-card.accent::before { background: linear-gradient(90deg, var(--accent), #F8C04D); }
+.kpi-card.purple::before { background: linear-gradient(90deg, var(--purple), #A07CE0); }
+
+.kpi-label { font-size: 11px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+.kpi-value { font-size: 28px; font-weight: 700; letter-spacing: -1px; line-height: 1; }
+.kpi-value.sm { font-size: 22px; }
+.kpi-trend { font-size: 11px; color: var(--text-muted); margin-top: 8px; display: flex; align-items: center; gap: 4px; }
+.kpi-trend .up { color: var(--teal); }
+.kpi-trend .dn { color: var(--coral); }
+
+/* ── CHARTS GRID ── */
+.charts-grid {
+  display: grid;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+.g-2 { grid-template-columns: 1fr 1fr; }
+.g-3 { grid-template-columns: 1fr 1fr 1fr; }
+.g-1-2 { grid-template-columns: 1fr 2fr; }
+.g-2-1 { grid-template-columns: 2fr 1fr; }
+
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+}
+.chart-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 16px;
+}
+.chart-title { font-size: 13px; font-weight: 600; color: var(--text); }
+.chart-subtitle { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.chart-badge {
+  font-size: 10px; font-family: 'DM Mono', monospace;
+  background: rgba(59,154,225,0.12);
+  color: var(--blue-lt);
+  padding: 3px 8px; border-radius: 4px;
+}
+.chart-wrap { position: relative; }
+.chart-wrap canvas { max-height: 240px; }
+.chart-wrap.tall canvas { max-height: 300px; }
+
+/* ── TABLE ── */
+.table-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.table-header-bar {
+  padding: 16px 20px;
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+.table-wrap { overflow-x: auto; max-height: 320px; overflow-y: auto; }
+table {
+  width: 100%; border-collapse: collapse;
+  font-size: 12px;
+}
+thead th {
+  background: var(--surface2);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 10px; font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.5px;
+  position: sticky; top: 0;
+  border-bottom: 1px solid var(--border);
+}
+tbody td {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+tbody tr:hover td { background: rgba(59,154,225,0.05); }
+.badge {
+  display: inline-block;
+  padding: 2px 8px; border-radius: 10px;
+  font-size: 10px; font-weight: 600;
+}
+.badge-green { background: rgba(0,181,163,0.15); color: var(--teal); }
+.badge-blue  { background: rgba(30,111,191,0.2);  color: var(--blue-lt); }
+.badge-coral { background: rgba(224,82,82,0.15);  color: var(--coral); }
+.badge-accent{ background: rgba(244,166,35,0.15); color: var(--accent); }
+.badge-purple{ background: rgba(124,92,191,0.15); color: var(--purple); }
+.badge-dim   { background: rgba(255,255,255,0.06);color: var(--text-muted); }
+
+/* ── FUNNEL ── */
+.funnel-wrap { padding: 10px 0; }
+.funnel-step {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 10px;
+}
+.funnel-label { font-size: 12px; color: var(--text-dim); width: 140px; flex-shrink: 0; }
+.funnel-bar-wrap { flex: 1; background: rgba(255,255,255,0.05); border-radius: 4px; height: 28px; overflow: hidden; }
+.funnel-bar { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 10px; font-size: 11px; font-weight: 600; transition: width 1s ease; }
+.funnel-val { font-size: 12px; color: var(--text-dim); width: 60px; text-align: right; font-family: 'DM Mono', monospace; }
+
+/* ── HEATMAP ── */
+.heatmap-grid {
+  display: grid;
+  gap: 4px;
+}
+.heatmap-row { display: flex; gap: 4px; align-items: center; }
+.heatmap-label { font-size: 11px; color: var(--text-muted); width: 70px; flex-shrink: 0; }
+.heatmap-cell {
+  flex: 1; height: 32px; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 600;
+  cursor: default;
+}
+
+/* ── GAUGE ── */
+.gauge-wrap { display: flex; align-items: center; justify-content: center; gap: 24px; flex-wrap: wrap; padding: 8px; }
+.gauge-item { text-align: center; }
+.gauge-circle {
+  width: 80px; height: 80px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; font-weight: 700;
+  margin: 0 auto 8px;
+}
+.gauge-name { font-size: 11px; color: var(--text-muted); }
+.gauge-sub  { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+/* ── PROGRESS TABLE ── */
+.prog-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.prog-row:last-child { border-bottom: none; }
+.prog-name { font-size: 12px; width: 120px; flex-shrink: 0; }
+.prog-bar-w { flex: 1; background: rgba(255,255,255,0.05); border-radius: 3px; height: 6px; }
+.prog-bar { height: 100%; border-radius: 3px; }
+.prog-val { font-size: 12px; font-family: 'DM Mono', monospace; color: var(--text-dim); width: 70px; text-align: right; }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+.page.active .kpi-card,
+.page.active .chart-card,
+.page.active .table-card {
+  animation: fadeIn 0.35s ease both;
+}
+.page.active .kpi-card:nth-child(2) { animation-delay: 0.04s; }
+.page.active .kpi-card:nth-child(3) { animation-delay: 0.08s; }
+.page.active .kpi-card:nth-child(4) { animation-delay: 0.12s; }
+.page.active .kpi-card:nth-child(5) { animation-delay: 0.16s; }
+.page.active .kpi-card:nth-child(6) { animation-delay: 0.20s; }
+
+/* ── SECTION TITLE ── */
+.section-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+  text-transform: uppercase; color: var(--text-muted);
+  margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="logo">📊</div>
+    <div>
+      <div class="header-title">Rapport Assurance — Marketing · Sales · Service</div>
+      <div class="header-sub">Habitat · Automobile · Prévoyance</div>
+    </div>
+  </div>
+  <div class="header-meta" id="dateDisplay"></div>
+</div>
+
+<!-- TABS -->
+<div class="tabs-bar">
+  <div class="tab active" onclick="showPage('overview')" data-page="overview"><span class="tab-icon">🏠</span> Vue d'ensemble</div>
+  <div class="tab" onclick="showPage('marketing')" data-page="marketing"><span class="tab-icon">📣</span> Marketing</div>
+  <div class="tab" onclick="showPage('sales')" data-page="sales"><span class="tab-icon">💼</span> Sales</div>
+  <div class="tab" onclick="showPage('service')" data-page="service"><span class="tab-icon">🛎</span> Service</div>
+</div>
+
+<!-- FILTER BAR -->
+<div class="filter-bar">
+  <span class="filter-label">Produit</span>
+  <button class="filter-chip active" onclick="setFilter('produit','Tous',this)">Tous</button>
+  <button class="filter-chip" onclick="setFilter('produit','Habitation',this)">🏠 Habitation</button>
+  <button class="filter-chip" onclick="setFilter('produit','Automobile',this)">🚗 Automobile</button>
+  <button class="filter-chip" onclick="setFilter('produit','Prévoyance',this)">🛡 Prévoyance</button>
+  <div class="filter-sep"></div>
+  <span class="filter-label">Période</span>
+  <button class="filter-chip active" onclick="setFilter('periode','12M',this)">12 mois</button>
+  <button class="filter-chip" onclick="setFilter('periode','6M',this)">6 mois</button>
+  <button class="filter-chip" onclick="setFilter('periode','3M',this)">3 mois</button>
+</div>
+
+<!-- ═══════════════ OVERVIEW ═══════════════ -->
+<div class="main">
+<div class="page active" id="page-overview">
+
+  <div class="section-label">KPIs Clés – Toutes lignes métier</div>
+  <div class="kpi-grid">
+    <div class="kpi-card blue">
+      <div class="kpi-label">Campagnes email</div>
+      <div class="kpi-value">200</div>
+      <div class="kpi-trend"><span class="up">▲ 12%</span> vs période préc.</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">Total envois</div>
+      <div class="kpi-value">1,56M</div>
+      <div class="kpi-trend"><span class="up">▲ 8%</span> vs période préc.</div>
+    </div>
+    <div class="kpi-card teal">
+      <div class="kpi-label">Leads créés</div>
+      <div class="kpi-value">500</div>
+      <div class="kpi-trend"><span class="up">▲ 22%</span> vs période préc.</div>
+    </div>
+    <div class="kpi-card accent">
+      <div class="kpi-label">Contrats signés</div>
+      <div class="kpi-value">250</div>
+      <div class="kpi-trend"><span class="up">▲ 5%</span> vs période préc.</div>
+    </div>
+    <div class="kpi-card accent">
+      <div class="kpi-label">CA Primes (actif)</div>
+      <div class="kpi-value sm">748 K€</div>
+      <div class="kpi-trend"><span class="up">▲ 11%</span> vs période préc.</div>
+    </div>
+    <div class="kpi-card coral">
+      <div class="kpi-label">Réclamations</div>
+      <div class="kpi-value">350</div>
+      <div class="kpi-trend"><span class="dn">▲ 3%</span> vs période préc.</div>
+    </div>
+    <div class="kpi-card teal">
+      <div class="kpi-label">Tx conversion leads</div>
+      <div class="kpi-value">25%</div>
+      <div class="kpi-trend"><span class="up">▲ 2pp</span> vs période préc.</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-label">Satisfaction (CSAT)</div>
+      <div class="kpi-value">5.7/10</div>
+      <div class="kpi-trend"><span class="dn">▼ 0.3</span> vs période préc.</div>
+    </div>
+  </div>
+
+  <div class="charts-grid g-2">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Pipeline Commercial par Produit</div><div class="chart-subtitle">Valeur totale des opportunités actives</div></div>
+        <span class="chart-badge">SALES</span>
+      </div>
+      <div class="chart-wrap"><canvas id="cPipeline"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Évolution mensuelle – Leads & Contrats</div><div class="chart-subtitle">12 derniers mois</div></div>
+        <span class="chart-badge">SALES</span>
+      </div>
+      <div class="chart-wrap tall"><canvas id="cLeadsTrend"></canvas></div>
+    </div>
+  </div>
+
+  <div class="charts-grid g-3">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Répartition CA par Produit</div><div class="chart-subtitle">Primes annuelles actives</div></div>
+      </div>
+      <div class="chart-wrap"><canvas id="cCAProduit"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Mix Canal de Souscription</div><div class="chart-subtitle">Contrats signés par canal</div></div>
+      </div>
+      <div class="chart-wrap"><canvas id="cCanaux"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Réclamations par Type</div><div class="chart-subtitle">Volume et statut</div></div>
+      </div>
+      <div class="chart-wrap"><canvas id="cReclType"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-label">Performance par Région</div>
+  <div class="chart-card" style="margin-bottom:24px">
+    <div class="chart-header">
+      <div><div class="chart-title">Leads · Contrats · Réclamations par Région</div></div>
+      <span class="chart-badge">VUE CROISÉE</span>
+    </div>
+    <div class="chart-wrap tall"><canvas id="cRegion"></canvas></div>
+  </div>
+
+</div>
+
+<!-- ═══════════════ MARKETING ═══════════════ -->
+<div class="page" id="page-marketing">
+
+  <div class="section-label">Performance Email Marketing</div>
+  <div class="kpi-grid">
+    <div class="kpi-card blue">
+      <div class="kpi-label">Campagnes envoyées</div>
+      <div class="kpi-value">200</div>
+      <div class="kpi-trend"><span class="up">▲ 12%</span> vs N-1</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">Total envois</div>
+      <div class="kpi-value">1,56M</div>
+      <div class="kpi-trend">Vol. cumulé 12 mois</div>
+    </div>
+    <div class="kpi-card teal">
+      <div class="kpi-label">Taux ouverture moyen</div>
+      <div class="kpi-value">29,4%</div>
+      <div class="kpi-trend"><span class="up">▲ 1,2pp</span> vs N-1</div>
+    </div>
+    <div class="kpi-card accent">
+      <div class="kpi-label">Taux de clic moyen</div>
+      <div class="kpi-value">5,2%</div>
+      <div class="kpi-trend"><span class="up">▲ 0,4pp</span> vs N-1</div>
+    </div>
+    <div class="kpi-card teal">
+      <div class="kpi-label">Événements organisés</div>
+      <div class="kpi-value">100</div>
+      <div class="kpi-trend"><span class="up">▲ 18%</span> vs N-1</div>
+    </div>
+    <div class="kpi-card coral">
+      <div class="kpi-label">Leads événements</div>
+      <div class="kpi-value">1 847</div>
+      <div class="kpi-trend"><span class="up">▲ 24%</span> vs N-1</div>
+    </div>
+  </div>
+
+  <div class="charts-grid g-2">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Taux d'ouverture & Clic par Produit</div><div class="chart-subtitle">Moyenne des campagnes</div></div>
+        <span class="chart-badge">EMAIL</span>
+      </div>
+      <div class="chart-wrap tall"><canvas id="cEmailRates"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Volume d'envois mensuel par Produit</div><div class="chart-subtitle">Stack cumulé</div></div>
+        <span class="chart-badge">EMAIL</span>
+      </div>
+      <div class="chart-wrap tall"><canvas id="cEmailVol"></canvas></div>
+    </div>
+  </div>
+
+  <div class="charts-grid g-1-2">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Type d'événements</div><div class="chart-subtitle">Répartition des 100 événements</div></div>
+        <span class="chart-badge">EVENTS</span>
+      </div>
+      <div class="chart-wrap"><canvas id="cEvtType"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div><div class="chart-title">Taux de présence & Leads générés par Type</div><div class="chart-subtitle">Performance événementielle</div></div>
+        <span class="chart-badge">EVENTS</span>
+      </div>
+      <div class="chart-wrap tall"><canvas id="cEvtPerf"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-label">Top Campagnes Email</div>
+  <div class="table-card">
+    <div class="table-header-bar">
+      <div class="chart-title">Campagnes – Classement par Taux d'ouverture</div>
+      <span class="chart-badge">TOP 15</span>
+    </div>
+    <div class="table-wrap">
+      <table id="tEmailTop"></table>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════ SALES ═══════════════ -->
+<div class="page" id="page-sales">
+
+  <div class="section-label">Funnel Commercial</div>
+  <div class="kpi-grid">
+    <div class="kpi-card blue"><div class="kpi-label">Leads totaux</div><div class="kpi-value">500</div><div class="kpi-trend">Base du funnel</div></div>
+    <div class="kpi-card blue"><div class="kpi-label">Leads qualifiés</div><div class="kpi-value">~130</div><div class="kpi-trend">26% du total</div></div>
+    <div class="kpi-card teal"><div class="kpi-label">Opportunités</div><div class="kpi-value">300</div><div class="kpi-trend">Toutes phases</div></div>
+    <div class="kpi-card accent"><div class="kpi-label">Gagnées</div><div class="kpi-value">~105</div><div class="kpi-trend">35% des opport.</div></div>
+    <div class="kpi-card accent"><div class="kpi-label">Contrats signés</div><div class="kpi-value">250</div><div class="kpi-trend">Actifs : 175</div></div>
+    <div class="kpi-card teal"><div class="kpi-label">Pipeline pondéré</div><div class="kpi-value sm">247 K€</div><div class="kpi-trend">Probabilisé</div></div>
+    <div class="kpi-card accent"><div class="kpi-label">Prime moy. contrat</div><div class="kpi-value sm">~1 410€</div><div class="kpi-trend">Contrats actifs</div></div>
+    <div class="kpi-card coral"><div class="kpi-label">Cycle vente moyen</div><div class="kpi-value">52 j</div><div class="kpi-trend">Toutes opport.</div></div>
+  </div>
+
+  <div class="section-label">Funnel de Conversion</div>
+  <div class="chart-card" style="margin-bottom:20px">
+    <div class="chart-header"><div><div class="chart-title">Entonnoir de conversion – Leads → Contrats</div></div><span class="chart-badge">FUNNEL</span></div>
+    <div class="funnel-wrap" id="funnelWrap"></div>
+  </div>
+
+  <div class="charts-grid g-2">
+    <div class="chart-card">
+      <div class="chart-header"><div><div class="chart-title">Statut des Opportunités</div><div class="chart-subtitle">Répartition par phase</div></div><span class="chart-badge">PIPELINE</span></div>
+      <div class="chart-wrap"><canvas id="cOpportStatut"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header"><div><div class="chart-title">Pipeline par Produit & Statut</div><div class="chart-subtitle">Montant des opportunités actives</div></div><span class="chart-badge">PIPELINE</span></div>
+      <div class="chart-wrap tall"><canvas id="cPipelineProd"></canvas></div>
+    </div>
+  </div>
+
+  <div class="charts-grid g-3">
+    <div class="chart-card">
+      <div class="chart-header"><div><div class="chart-title">CA Contrats par Produit</div><div class="chart-subtitle">Primes annuelles</div></div></div>
+      <div class="chart-wrap"><canvas id="cCAProdSales"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header"><div><div class="chart-title">Performance Commerciaux</div><div class="chart-subtitle">Leads gagnés par responsable</div></div></div>
+      <div class="chart-wrap"><canvas id="cCommerciaux"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header"><div><div class="chart-title">Statut Contrats</div><div class="chart-subtitle">Portefeuille actif</div></div></div>
+      <div class="funnel-wrap" id="contratStatutWrap" style="padding-top:20px"></div>
+    </div>
+  </div>
+
+  <div class="section-label">Détail des Opportunités Clés</div>
+  <div class="table-card">
+    <div class="table-header-bar"><div class="chart-title">Opportunités – Phase Négociation & Proposition</div><span class="chart-badge">PIPELINE CHAUD</span></div>
+    <div class="table-wrap"><table id="tOpport"></table></div>
+  </div>
+
+</div>
+
+<!-- ═══════════════ SERVICE ═══════════════ -->
+<div class="page" id="page-service">
+
+  <div class="section-label">Service Client & Réclamations</div>
+  <div class="kpi-grid">
+    <div class="kpi-card coral"><div class="kpi-label">Réclamations totales</div><div class="kpi-value">350</div><div class="kpi-trend"><span class="dn">▲ 3%</span> vs N-1</div></div>
+    <div class="kpi-card coral"><div class="kpi-label">En cours/Ouvertes</div><div class="kpi-value">~88</div><div class="kpi-trend">25% du total</div></div>
+    <div class="kpi-card teal"><div class="kpi-label">Résolues</div><div class="kpi-value">~193</div><div class="kpi-trend">55% du total</div></div>
+    <div class="kpi-card teal"><div class="kpi-label">Taux résolution</div><div class="kpi-value">55%</div><div class="kpi-trend"><span class="up">▲ 2pp</span> vs N-1</div></div>
+    <div class="kpi-card accent"><div class="kpi-label">Délai moyen (j)</div><div class="kpi-value">23 j</div><div class="kpi-trend"><span class="dn">▲ 1j</span> vs N-1</div></div>
+    <div class="kpi-card purple"><div class="kpi-label">CSAT moyen</div><div class="kpi-value">5.7/10</div><div class="kpi-trend"><span class="dn">▼ 0.3</span> vs N-1</div></div>
+    <div class="kpi-card coral"><div class="kpi-label">Escaladées</div><div class="kpi-value">~49</div><div class="kpi-trend">14% du total</div></div>
+    <div class="kpi-card blue"><div class="kpi-label">Sinistres montant moy.</div><div class="kpi-value sm">~7 200€</div><div class="kpi-trend">Hab. + Auto</div></div>
+  </div>
+
+  <div class="charts-grid g-2">
+    <div class="chart-card">
+      <div class="chart-header"><div><div class="chart-title">Réclamations par Type & Statut</div><div class="chart-subtitle">Volume et état de traitement</div></div><span class="chart-badge">RÉCLAMATIONS</span></div>
+      <div class="chart-wrap tall"><canvas id="cReclTypeStatut"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header"><div><div class="chart-title">Délai de résolution par Produit</div><div class="chart-subtitle">Jours moyens – réclamations résolues</div></div><span class="chart-badge">SLA</span></div>
+      <div class="chart-wrap tall"><canvas id="cDelaiProd"></canvas></div>
+    </div>
+  </div>
+
+  <div class="charts-grid g-1-2">
+    <div class="chart-card">
+      <div class="chart-header"><div><div class="chart-title">CSAT par Produit</div><div class="chart-subtitle">Score moyen /10</div></div></div>
+      <div class="gauge-wrap" id="csatGauge"></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header"><div><div class="chart-title">Réclamations mensuelles par Produit</div><div class="chart-subtitle">Tendance 12 mois</div></div><span class="chart-badge">TENDANCE</span></div>
+      <div class="chart-wrap tall"><canvas id="cReclTrend"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-label">Analyse par Canal de Contact</div>
+  <div class="chart-card" style="margin-bottom:20px">
+    <div class="chart-header"><div><div class="chart-title">Réclamations par Canal & Produit</div></div><span class="chart-badge">CANAUX</span></div>
+    <div class="chart-wrap tall"><canvas id="cReclCanal"></canvas></div>
+  </div>
+
+  <div class="section-label">Réclamations récentes – Suivi</div>
+  <div class="table-card">
+    <div class="table-header-bar"><div class="chart-title">Réclamations ouvertes & escaladées</div><span class="chart-badge">PRIORITÉ</span></div>
+    <div class="table-wrap"><table id="tRecl"></table></div>
+  </div>
+
+</div>
+</div><!-- /main -->
+
+<script>
+// ══════════════════════════════════════════
+// DATA (synthétique – base Excel identique)
+// ══════════════════════════════════════════
+const MOIS = ['Juin','Juil','Août','Sept','Oct','Nov','Déc','Jan','Fév','Mar','Avr','Mai'];
+const PRODUITS = ['Habitation','Automobile','Prévoyance'];
+const REGIONS  = ['Île-de-France','Auvergne-RA','Provence-PACA','Nouvelle-Aquit.','Hauts-de-France'];
+const CANAUX   = ['Email','Téléphone','Agence','Web','Courtier'];
+
+function rnd(a,b){ return Math.round(a + Math.random()*(b-a)); }
+function seed(n){ let x=Math.sin(n+1)*10000; return x-Math.floor(x); }
+
+// Palette
+const C = {
+  blue:   '#3B9AE1', blueD: '#1E6FBF', blueFill: 'rgba(59,154,225,0.15)',
+  teal:   '#00B5A3', tealFill: 'rgba(0,181,163,0.15)',
+  coral:  '#E05252', coralFill:'rgba(224,82,82,0.15)',
+  accent: '#F4A623', accentFill:'rgba(244,166,35,0.15)',
+  purple: '#7C5CBF', purpleFill:'rgba(124,92,191,0.15)',
+  green:  '#34C77B',
+  border: 'rgba(255,255,255,0.08)',
+  text:   '#8BA7CC',
+  grid:   'rgba(59,154,225,0.08)'
+};
+
+Chart.defaults.color = C.text;
+Chart.defaults.borderColor = C.border;
+Chart.defaults.font.family = 'DM Sans';
+Chart.defaults.font.size = 11;
+
+const defOpts = {
+  responsive: true,
+  maintainAspectRatio: true,
+  plugins: { legend: { labels: { color: C.text, boxWidth: 10, padding: 12 } }, tooltip: { backgroundColor:'#0F2744', borderColor:'rgba(59,154,225,0.3)', borderWidth:1, padding:10 } },
+  scales: {
+    x: { grid: { color: C.grid }, ticks: { color: C.text } },
+    y: { grid: { color: C.grid }, ticks: { color: C.text } }
+  }
+};
+
+function mkChart(id, type, data, opts={}) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  return new Chart(ctx, { type, data, options: { ...defOpts, ...opts } });
+}
+
+// ── DATE ──
+const now = new Date();
+document.getElementById('dateDisplay').textContent =
+  now.toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'}) + ' · Simulé';
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelector(`[data-page="${id}"]`).classList.add('active');
+}
+function setFilter(type, val, el) {
+  el.closest('.filter-bar').querySelectorAll('.filter-chip').forEach(c=>{
+    if(c.closest('.filter-bar')===el.closest('.filter-bar') &&
+       c.onclick && c.onclick.toString().includes(`'${type}'`)) c.classList.remove('active');
+  });
+  el.classList.add('active');
+}
+
+// ══════════════════════════════════════════
+// OVERVIEW CHARTS
+// ══════════════════════════════════════════
+
+// Pipeline par produit
+mkChart('cPipeline','bar',{
+  labels: PRODUITS,
+  datasets:[
+    {label:'Prospection',  data:[48000,39000,62000], backgroundColor:'rgba(59,154,225,0.6)'},
+    {label:'Proposition',  data:[82000,74000,95000], backgroundColor:'rgba(0,181,163,0.6)'},
+    {label:'Négociation',  data:[45000,58000,71000], backgroundColor:'rgba(244,166,35,0.6)'},
+  ]
+},{plugins:{...defOpts.plugins}, scales:{x:{stacked:true,...defOpts.scales.x},y:{stacked:true,...defOpts.scales.y}}});
+
+// Leads & Contrats trend
+mkChart('cLeadsTrend','line',{
+  labels: MOIS,
+  datasets:[
+    {label:'Leads créés', data:[32,28,24,38,41,45,30,42,48,52,46,44], borderColor:C.blue, backgroundColor:C.blueFill, tension:0.4, fill:true, pointRadius:3},
+    {label:'Contrats signés', data:[12,10,9,14,17,19,11,18,21,22,20,18], borderColor:C.accent, backgroundColor:C.accentFill, tension:0.4, fill:true, pointRadius:3},
+  ]
+},{plugins:{...defOpts.plugins,legend:{position:'top',labels:{color:C.text,boxWidth:10}}}, scales:{x:defOpts.scales.x, y:{...defOpts.scales.y,beginAtZero:true}}});
+
+// CA par produit
+mkChart('cCAProduit','doughnut',{
+  labels:PRODUITS,
+  datasets:[{data:[298000,241000,209000],backgroundColor:[C.blue,C.teal,C.accent],hoverOffset:8,borderWidth:0}]
+},{plugins:{...defOpts.plugins,legend:{position:'bottom',labels:{color:C.text}}},scales:undefined,cutout:'68%'});
+
+// Canaux
+mkChart('cCanaux','doughnut',{
+  labels:CANAUX,
+  datasets:[{data:[22,18,28,15,17],backgroundColor:[C.blue,C.teal,C.accent,C.coral,C.purple],borderWidth:0,hoverOffset:6}]
+},{plugins:{...defOpts.plugins,legend:{position:'bottom',labels:{color:C.text}}},scales:undefined,cutout:'62%'});
+
+// Réclamations par type
+const rTypes=['Sinistre non remboursé','Délai traitement','Erreur contrat','Résiliation','Autre'];
+mkChart('cReclType','bar',{
+  labels:rTypes.map(t=>t.length>18?t.slice(0,18)+'…':t),
+  datasets:[{label:'Réclamations',data:[88,72,61,54,75],backgroundColor:[C.coral,C.accent,C.purple,C.blue,C.teal],borderRadius:4}]
+},{plugins:{...defOpts.plugins,legend:{display:false}},indexAxis:'y',scales:{x:{...defOpts.scales.x,beginAtZero:true},y:defOpts.scales.y}});
+
+// Région multi
+const leadsR  =[118,92,108,85,97];
+const contratsR=[48,38,42,34,38];
+const reclR   =[78,62,74,58,78];
+mkChart('cRegion','bar',{
+  labels:REGIONS,
+  datasets:[
+    {label:'Leads',      data:leadsR,   backgroundColor:'rgba(59,154,225,0.7)',borderRadius:3},
+    {label:'Contrats',   data:contratsR,backgroundColor:'rgba(244,166,35,0.7)',borderRadius:3},
+    {label:'Réclamations',data:reclR,   backgroundColor:'rgba(224,82,82,0.7)',borderRadius:3},
+  ]
+},{plugins:{...defOpts.plugins,legend:{position:'top',labels:{color:C.text}}},scales:{x:{...defOpts.scales.x,grouped:true},y:{...defOpts.scales.y,beginAtZero:true}}});
+
+// ══════════════════════════════════════════
+// MARKETING CHARTS
+// ══════════════════════════════════════════
+
+mkChart('cEmailRates','bar',{
+  labels:PRODUITS,
+  datasets:[
+    {label:'Taux ouverture',data:[30.2,28.7,29.3],backgroundColor:C.blue,borderRadius:4},
+    {label:'Taux clic',    data:[5.4,4.9,5.3],backgroundColor:C.teal,borderRadius:4},
+  ]
+},{plugins:{...defOpts.plugins},scales:{x:defOpts.scales.x,y:{...defOpts.scales.y,beginAtZero:true,ticks:{callback:v=>v+'%'}}}});
+
+const volMois=MOIS.map((_,i)=>({
+  hab: rnd(30000,80000),auto:rnd(25000,70000),prev:rnd(15000,50000)
+}));
+mkChart('cEmailVol','bar',{
+  labels:MOIS,
+  datasets:[
+    {label:'Habitation', data:volMois.map(v=>v.hab),backgroundColor:'rgba(59,154,225,0.7)',borderRadius:3},
+    {label:'Automobile', data:volMois.map(v=>v.auto),backgroundColor:'rgba(0,181,163,0.7)',borderRadius:3},
+    {label:'Prévoyance', data:volMois.map(v=>v.prev),backgroundColor:'rgba(244,166,35,0.7)',borderRadius:3},
+  ]
+},{plugins:{...defOpts.plugins,legend:{position:'top',labels:{color:C.text}}},scales:{x:{...defOpts.scales.x,stacked:true},y:{...defOpts.scales.y,stacked:true,beginAtZero:true}}});
+
+const evtTypes=['Webinaire','Salon prof.','Atelier client','Petit-déj. prospects'];
+mkChart('cEvtType','doughnut',{
+  labels:evtTypes,
+  datasets:[{data:[38,22,25,15],backgroundColor:[C.blue,C.teal,C.accent,C.purple],borderWidth:0,hoverOffset:6}]
+},{plugins:{...defOpts.plugins,legend:{position:'bottom',labels:{color:C.text}}},scales:undefined,cutout:'60%'});
+
+mkChart('cEvtPerf','bar',{
+  labels:evtTypes,
+  datasets:[
+    {label:'Tx présence (%)',data:[72,68,80,65],backgroundColor:'rgba(59,154,225,0.6)',borderRadius:3,yAxisID:'y'},
+    {label:'Leads générés',  data:[520,310,480,245],backgroundColor:'rgba(244,166,35,0.7)',borderRadius:3,yAxisID:'y1'},
+  ]
+},{plugins:{...defOpts.plugins,legend:{position:'top',labels:{color:C.text}}},
+   scales:{
+     x:defOpts.scales.x,
+     y:{...defOpts.scales.y,beginAtZero:true,position:'left',ticks:{callback:v=>v+'%'},title:{display:true,text:'Taux présence',color:C.text}},
+     y1:{beginAtZero:true,position:'right',grid:{drawOnChartArea:false,color:C.grid},ticks:{color:C.text},title:{display:true,text:'Leads',color:C.text}}
+   }});
+
+// Table emails
+const emailData=[
+  ['CAM-0042','Rentrée Habitation 2024','Habitation','Email','15/09/2024',12450,'41.2%','8.1%'],
+  ['CAM-0078','Printemps Auto 2024','Automobile','Web','20/03/2024',9800,'38.7%','7.4%'],
+  ['CAM-0115','Protection Famille 2024','Prévoyance','Email','10/01/2024',8200,'37.9%','6.8%'],
+  ['CAM-0031','Black Friday 2024','Habitation','Email','25/11/2024',15000,'36.4%','9.2%'],
+  ['CAM-0089','Offre Fidélité 2024','Automobile','Courtier','01/06/2024',6500,'35.8%','6.1%'],
+  ['CAM-0156','Prévoyance Senior 2024','Prévoyance','Téléphone','15/02/2024',4200,'35.1%','5.7%'],
+  ['CAM-0023','Jeune Conducteur 2024','Automobile','Web','01/07/2024',7800,'34.6%','7.0%'],
+  ['CAM-0198','Multirisque Pro 2024','Habitation','Agence','10/04/2024',5100,'33.9%','5.4%'],
+  ['CAM-0067','Anniversaire Client 2024','Prévoyance','Email','01/12/2024',11200,'33.2%','4.9%'],
+  ['CAM-0140','Résiliation Saison 2024','Automobile','Email','15/10/2024',9400,'32.8%','5.1%'],
+  ['CAM-0054','Été Sécurité 2024','Habitation','Web','01/08/2024',8700,'31.5%','4.6%'],
+  ['CAM-0177','Janvier Bilan 2024','Prévoyance','Email','15/01/2024',10300,'30.8%','4.3%'],
+  ['CAM-0019','Rentrée Habitation 2023','Habitation','Courtier','01/09/2023',11800,'30.1%','4.0%'],
+  ['CAM-0092','Printemps Auto 2023','Automobile','Email','15/04/2023',8900,'29.7%','3.8%'],
+  ['CAM-0135','Protection Famille 2023','Prévoyance','Agence','01/06/2023',7200,'29.2%','3.5%'],
+];
+const tEmail=document.getElementById('tEmailTop');
+tEmail.innerHTML=`<thead><tr>${['ID Campagne','Nom','Produit','Canal','Date','Envois','Tx ouv.','Tx clic'].map(h=>`<th>${h}</th>`).join('')}</tr></thead>`;
+const tbE=document.createElement('tbody');
+emailData.forEach(r=>{
+  const prod=r[2];
+  const bc=prod==='Habitation'?'badge-blue':prod==='Automobile'?'badge-teal':'badge-accent';
+  tbE.innerHTML+=`<tr>
+    <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted)">${r[0]}</td>
+    <td>${r[1]}</td>
+    <td><span class="badge ${bc}">${r[2]}</span></td>
+    <td>${r[3]}</td>
+    <td style="font-family:'DM Mono',monospace;font-size:10px">${r[4]}</td>
+    <td style="text-align:right;font-family:'DM Mono',monospace">${Number(r[5]).toLocaleString('fr')}</td>
+    <td style="color:${parseFloat(r[6])>33?'var(--teal)':'var(--text)'}"><b>${r[6]}</b></td>
+    <td>${r[7]}</td>
+  </tr>`;
+});
+tEmail.appendChild(tbE);
+
+// ══════════════════════════════════════════
+// SALES CHARTS
+// ══════════════════════════════════════════
+
+// Funnel
+const funnelData=[
+  {label:'Leads créés',val:500,color:C.blue},
+  {label:'Leads qualifiés',val:130,color:C.blue},
+  {label:'Opportunités',val:300,color:C.teal},
+  {label:'Opp. gagnées',val:105,color:C.accent},
+  {label:'Contrats signés',val:250,color:C.green},
+];
+const fw=document.getElementById('funnelWrap');
+funnelData.forEach(f=>{
+  const pct=Math.round(f.val/500*100);
+  fw.innerHTML+=`<div class="funnel-step">
+    <div class="funnel-label">${f.label}</div>
+    <div class="funnel-bar-wrap">
+      <div class="funnel-bar" style="width:${pct}%;background:${f.color}20;color:${f.color}">
+        <span>${f.val.toLocaleString('fr')}</span>
+      </div>
+    </div>
+    <div class="funnel-val">${pct}%</div>
+  </div>`;
+});
+
+// Opportunités statut
+mkChart('cOpportStatut','doughnut',{
+  labels:['Prospection','Proposition','Négociation','Clôturée Gagnée','Clôturée Perdue'],
+  datasets:[{data:[30,60,45,105,60],backgroundColor:[C.blue,C.teal,C.accent,C.green,C.coral],borderWidth:0,hoverOffset:6}]
+},{plugins:{...defOpts.plugins,legend:{position:'right',labels:{color:C.text,boxWidth:10,padding:8}}},scales:undefined,cutout:'60%'});
+
+// Pipeline par produit et statut
+mkChart('cPipelineProd','bar',{
+  labels:PRODUITS,
+  datasets:[
+    {label:'Prospection', data:[48000,39000,62000],backgroundColor:'rgba(59,154,225,0.6)',borderRadius:3},
+    {label:'Proposition', data:[82000,74000,95000],backgroundColor:'rgba(0,181,163,0.6)',borderRadius:3},
+    {label:'Négociation', data:[45000,58000,71000],backgroundColor:'rgba(244,166,35,0.6)',borderRadius:3},
+  ]
+},{plugins:{...defOpts.plugins,legend:{position:'top',labels:{color:C.text}}},scales:{x:{...defOpts.scales.x,stacked:true},y:{...defOpts.scales.y,stacked:true,beginAtZero:true,ticks:{callback:v=>(v/1000)+'K€'}}}});
+
+mkChart('cCAProdSales','doughnut',{
+  labels:PRODUITS,
+  datasets:[{data:[298000,241000,209000],backgroundColor:[C.blue,C.teal,C.accent],borderWidth:0,hoverOffset:6}]
+},{plugins:{...defOpts.plugins,legend:{position:'bottom',labels:{color:C.text}}},scales:undefined,cutout:'68%'});
+
+const comms=['A. Dupont','B. Laurent','C. Moreau','D. Rousseau','E. Blanchard'];
+mkChart('cCommerciaux','bar',{
+  labels:comms,
+  datasets:[{label:'Leads gagnés',data:[28,22,31,18,26],backgroundColor:[C.blue,C.teal,C.accent,C.coral,C.purple],borderRadius:4}]
+},{plugins:{...defOpts.plugins,legend:{display:false}},indexAxis:'y',scales:{x:{...defOpts.scales.x,beginAtZero:true},y:defOpts.scales.y}});
+
+// Statut contrats
+const cSW=document.getElementById('contratStatutWrap');
+const cStatData=[{l:'Actif',v:175,c:C.teal},{l:'Résilié',v:37,c:C.coral},{l:'Suspendu',v:12,c:C.accent},{l:'En attente',v:26,c:C.purple}];
+cStatData.forEach(d=>{
+  const pct=Math.round(d.v/250*100);
+  cSW.innerHTML+=`<div class="funnel-step">
+    <div class="funnel-label">${d.l}</div>
+    <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${pct}%;background:${d.c}30;color:${d.c}">${d.v}</div></div>
+    <div class="funnel-val">${pct}%</div>
+  </div>`;
+});
+
+// Table opportunités
+const opportData=[
+  ['OPP-0045','Habitation','Grande Entreprise','Île-de-France','B. Laurent','Négociation',95000,'70%','28/06/2025'],
+  ['OPP-0112','Prévoyance','Pro/TPE','Auvergne-RA','A. Dupont','Négociation',72000,'70%','15/07/2025'],
+  ['OPP-0078','Automobile','Particulier','Provence-PACA','C. Moreau','Proposition',38000,'40%','30/07/2025'],
+  ['OPP-0201','Prévoyance','Grande Entreprise','Île-de-France','E. Blanchard','Négociation',115000,'70%','10/07/2025'],
+  ['OPP-0089','Habitation','Pro/TPE','Hauts-de-France','D. Rousseau','Proposition',42000,'40%','20/08/2025'],
+  ['OPP-0156','Automobile','Grande Entreprise','Nouvelle-Aquit.','B. Laurent','Proposition',68000,'40%','15/08/2025'],
+  ['OPP-0034','Prévoyance','Particulier','Île-de-France','A. Dupont','Négociation',55000,'70%','05/07/2025'],
+  ['OPP-0278','Habitation','Grande Entreprise','Auvergne-RA','C. Moreau','Négociation',88000,'70%','20/07/2025'],
+];
+const tO=document.getElementById('tOpport');
+tO.innerHTML=`<thead><tr>${['ID','Produit','Segment','Région','Commercial','Phase','Montant','Proba','Clôture'].map(h=>`<th>${h}</th>`).join('')}</tr></thead>`;
+const tbO=document.createElement('tbody');
+opportData.forEach(r=>{
+  const phColor=r[5]==='Négociation'?'badge-accent':'badge-blue';
+  const prod=r[1]; const pc=prod==='Habitation'?'badge-blue':prod==='Automobile'?'badge-teal':'badge-purple';
+  tbO.innerHTML+=`<tr>
+    <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted)">${r[0]}</td>
+    <td><span class="badge ${pc}">${r[1]}</span></td>
+    <td><span style="font-size:11px;color:var(--text-dim)">${r[2]}</span></td>
+    <td>${r[3]}</td>
+    <td>${r[4]}</td>
+    <td><span class="badge ${phColor}">${r[5]}</span></td>
+    <td style="text-align:right;font-family:'DM Mono',monospace;font-weight:600">${Number(r[6]).toLocaleString('fr')} €</td>
+    <td style="color:var(--accent);font-weight:600">${r[7]}</td>
+    <td style="font-family:'DM Mono',monospace;font-size:11px">${r[8]}</td>
+  </tr>`;
+});
+tO.appendChild(tbO);
+
+// ══════════════════════════════════════════
+// SERVICE CHARTS
+// ══════════════════════════════════════════
+
+mkChart('cReclTypeStatut','bar',{
+  labels:['Sinistre non remb.','Délai traitement','Erreur contrat','Résiliation','Autre'],
+  datasets:[
+    {label:'Ouverte',    data:[12,14,8,10,9],backgroundColor:'rgba(59,154,225,0.7)',borderRadius:2},
+    {label:'En traitement',data:[18,16,12,12,12],backgroundColor:'rgba(244,166,35,0.7)',borderRadius:2},
+    {label:'Résolue',   data:[48,32,32,24,44],backgroundColor:'rgba(0,181,163,0.7)',borderRadius:2},
+    {label:'Escaladée', data:[10,10,9,8,10],backgroundColor:'rgba(224,82,82,0.7)',borderRadius:2},
+  ]
+},{plugins:{...defOpts.plugins,legend:{position:'top',labels:{color:C.text,boxWidth:10}}},scales:{x:{...defOpts.scales.x,stacked:true},y:{...defOpts.scales.y,stacked:true,beginAtZero:true}}});
+
+mkChart('cDelaiProd','bar',{
+  labels:PRODUITS,
+  datasets:[
+    {label:'Délai moyen (jours)',data:[21,25,18],backgroundColor:[C.blue,C.teal,C.accent],borderRadius:6,maxBarThickness:60}
+  ]
+},{plugins:{...defOpts.plugins,legend:{display:false}},scales:{x:defOpts.scales.x,y:{...defOpts.scales.y,beginAtZero:true,title:{display:true,text:'Jours',color:C.text}}}});
+
+// CSAT Gauges
+const csatW=document.getElementById('csatGauge');
+const csatData=[
+  {prod:'Habitation',score:5.9,c:C.blue},
+  {prod:'Automobile',score:5.4,c:C.teal},
+  {prod:'Prévoyance',score:5.8,c:C.accent},
+];
+csatData.forEach(d=>{
+  const pct=d.score/10;
+  csatW.innerHTML+=`<div class="gauge-item">
+    <div class="gauge-circle" style="background:conic-gradient(${d.c} ${pct*360}deg, rgba(255,255,255,0.05) 0deg)">
+      <span style="color:${d.c}">${d.score}</span>
+    </div>
+    <div class="gauge-name">${d.prod}</div>
+    <div class="gauge-sub">/ 10</div>
+  </div>`;
+});
+
+const reclTrendData=MOIS.map((_,i)=>({hab:rnd(8,18),auto:rnd(7,16),prev:rnd(5,12)}));
+mkChart('cReclTrend','line',{
+  labels:MOIS,
+  datasets:[
+    {label:'Habitation',data:reclTrendData.map(v=>v.hab),borderColor:C.blue,backgroundColor:C.blueFill,tension:0.4,fill:true,pointRadius:2},
+    {label:'Automobile',data:reclTrendData.map(v=>v.auto),borderColor:C.teal,backgroundColor:C.tealFill,tension:0.4,fill:true,pointRadius:2},
+    {label:'Prévoyance',data:reclTrendData.map(v=>v.prev),borderColor:C.accent,backgroundColor:C.accentFill,tension:0.4,fill:true,pointRadius:2},
+  ]
+},{plugins:{...defOpts.plugins,legend:{position:'top',labels:{color:C.text}}},scales:{x:defOpts.scales.x,y:{...defOpts.scales.y,beginAtZero:true}}});
+
+mkChart('cReclCanal','bar',{
+  labels:CANAUX,
+  datasets:[
+    {label:'Habitation',data:[32,28,38,18,22],backgroundColor:'rgba(59,154,225,0.7)',borderRadius:3},
+    {label:'Automobile',data:[28,24,30,16,18],backgroundColor:'rgba(0,181,163,0.7)',borderRadius:3},
+    {label:'Prévoyance',data:[18,16,22,12,14],backgroundColor:'rgba(244,166,35,0.7)',borderRadius:3},
+  ]
+},{plugins:{...defOpts.plugins,legend:{position:'top',labels:{color:C.text}}},scales:{x:{...defOpts.scales.x,stacked:false},y:{...defOpts.scales.y,beginAtZero:true}}});
+
+// Table réclamations
+const reclRows=[
+  ['REC-0089','CTR-0045','Habitation','Sinistre non remb.','Île-de-France','12/04/2025','Escaladée','—','Oui'],
+  ['REC-0156','CTR-0112','Automobile','Délai traitement','Auvergne-RA','20/04/2025','Ouverte','12j','Non'],
+  ['REC-0201','CTR-0078','Prévoyance','Erreur contrat','Provence-PACA','05/05/2025','Escaladée','—','Oui'],
+  ['REC-0034','CTR-0234','Habitation','Résiliation','Hauts-de-France','28/04/2025','En traitement','8j','Non'],
+  ['REC-0267','CTR-0189','Automobile','Sinistre non remb.','Nouvelle-Aquit.','10/05/2025','Escaladée','—','Oui'],
+  ['REC-0112','CTR-0067','Prévoyance','Délai traitement','Île-de-France','02/05/2025','Ouverte','18j','Non'],
+  ['REC-0178','CTR-0145','Habitation','Autre','Auvergne-RA','15/05/2025','En traitement','5j','Non'],
+  ['REC-0312','CTR-0098','Automobile','Erreur contrat','Île-de-France','18/05/2025','Escaladée','—','Oui'],
+];
+const tR=document.getElementById('tRecl');
+tR.innerHTML=`<thead><tr>${['ID Récl.','Contrat','Produit','Type','Région','Date ouv.','Statut','Délai','Escaladée'].map(h=>`<th>${h}</th>`).join('')}</tr></thead>`;
+const tbR=document.createElement('tbody');
+reclRows.forEach(r=>{
+  const sColor=r[6]==='Escaladée'?'badge-coral':r[6]==='Ouverte'?'badge-blue':r[6]==='En traitement'?'badge-accent':'badge-green';
+  const prod=r[2]; const pc=prod==='Habitation'?'badge-blue':prod==='Automobile'?'badge-teal':'badge-purple';
+  const escColor=r[8]==='Oui'?'badge-coral':'badge-dim';
+  tbR.innerHTML+=`<tr>
+    <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted)">${r[0]}</td>
+    <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text-muted)">${r[1]}</td>
+    <td><span class="badge ${pc}">${r[2]}</span></td>
+    <td style="font-size:11px">${r[3]}</td>
+    <td style="font-size:11px">${r[4]}</td>
+    <td style="font-family:'DM Mono',monospace;font-size:10px">${r[5]}</td>
+    <td><span class="badge ${sColor}">${r[6]}</span></td>
+    <td style="font-family:'DM Mono',monospace;text-align:center">${r[7]}</td>
+    <td><span class="badge ${escColor}">${r[8]}</span></td>
+  </tr>`;
+});
+tR.appendChild(tbR);
+
+</script>
+</body>
+</html>
